@@ -33,15 +33,11 @@
     .play-btn:hover { opacity: 0.85; }
     .outline-btn { background: none; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 11px 22px; font-size: 15px; cursor: pointer; color: var(--text-secondary); font-family: inherit; }
     .outline-btn:hover { background: var(--bg-secondary); }
-
-    /* Home */
     .home-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; }
     .home-title { font-size: 26px; font-weight: 500; margin-bottom: 6px; }
     .home-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 1.75rem; }
     .home-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .no-q { margin-top: 1.25rem; font-size: 13px; color: var(--text-tertiary); }
-
-    /* Game */
+    .status-msg { margin-top: 1.25rem; font-size: 13px; color: var(--text-tertiary); min-height: 20px; }
     .game-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
     .game-header h1 { flex: 1; }
     .score-badge { background: var(--bg-secondary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 4px 12px; font-size: 13px; color: var(--text-secondary); }
@@ -54,7 +50,7 @@
     .hint-toggle:hover { background: var(--bg-secondary); }
     .hint-box { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; color: var(--text-secondary); margin-top: 10px; text-align: left; line-height: 1.5; }
     .answer-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .answer-input { flex: 1; font-size: 15px; padding: 10px 12px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .answer-input { flex: 1; font-size: 15px; padding: 10px 12px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit; outline: none; }
     .answer-input:focus { border-color: var(--border-strong); }
     .answer-input:disabled { opacity: 0.6; }
     .guess-btn { background: var(--text-primary); color: var(--bg-primary); border: none; border-radius: var(--radius-md); padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
@@ -67,12 +63,13 @@
     .finish-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; }
     .finish-score { font-size: 42px; font-weight: 500; margin-bottom: 6px; }
     .finish-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 1.75rem; }
+    .loader { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border-mid); border-top-color: var(--text-primary); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- HOME -->
   <div id="view-home">
     <div class="home-card">
       <div class="home-title">Accessory Quiz</div>
@@ -80,11 +77,10 @@
       <div class="home-btns">
         <button class="play-btn" onclick="startGame()">Play</button>
       </div>
-      <div class="no-q" id="no-q-notice" style="display:none">No questions available yet — check back soon!</div>
+      <div class="status-msg" id="status-msg"></div>
     </div>
   </div>
 
-  <!-- GAME -->
   <div id="view-game" style="display:none">
     <div class="game-header">
       <button class="back-btn" onclick="showHome()"><i class="ti ti-arrow-left" aria-hidden="true" style="font-size:16px"></i></button>
@@ -97,21 +93,39 @@
 
 </div>
 <script>
-  let questions = JSON.parse(localStorage.getItem('quiz-questions') || '[]');
-  let gameQueue = [], gameIdx = 0, gameScore = 0, answered = false, hintVisible = false;
+  const GIST_ID = '909f9d142729a47519868d1773563aeb';
+
+  let questions = [], gameQueue = [], gameIdx = 0, gameScore = 0, answered = false, hintVisible = false;
+
+  async function loadQuestions() {
+    const msg = document.getElementById('status-msg');
+    msg.innerHTML = '<span class="loader"></span> Loading questions…';
+    try {
+      const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
+      if (!res.ok) throw new Error('Could not reach quiz data.');
+      const data = await res.json();
+      const file = Object.values(data.files)[0];
+      const raw = await fetch(file.raw_url);
+      questions = await raw.json();
+      const active = questions.filter(q => q.is_active);
+      msg.textContent = active.length === 0 ? 'No questions available yet — check back soon!' : '';
+    } catch(e) {
+      msg.textContent = 'Could not load questions. Try refreshing.';
+    }
+  }
 
   function showHome() {
     document.getElementById('view-home').style.display = '';
     document.getElementById('view-game').style.display = 'none';
-    const active = questions.filter(q => q.is_active);
-    document.getElementById('no-q-notice').style.display = active.length === 0 ? '' : 'none';
   }
 
-  function startGame() {
-    // Refresh questions in case admin updated them in another tab
-    questions = JSON.parse(localStorage.getItem('quiz-questions') || '[]');
+  async function startGame() {
+    const msg = document.getElementById('status-msg');
+    await loadQuestions();
     const active = questions.filter(q => q.is_active);
-    if (active.length === 0) { document.getElementById('no-q-notice').style.display = ''; return; }
+    if (active.length === 0) return;
     gameQueue = [...active].sort(() => Math.random() - 0.5);
     gameIdx = 0; gameScore = 0;
     document.getElementById('view-home').style.display = 'none';
@@ -146,7 +160,7 @@
     </div>
     <div class="answer-row">
       <input class="answer-input" id="answer-in" type="text" placeholder="Character name…"
-        onkeydown="if(event.key==='Enter')submitAnswer()" autocomplete="off" autocorrect="off" spellcheck="false">
+        onkeydown="if(event.key==='Enter')submitAnswer()" autocomplete="off" spellcheck="false">
       <button class="guess-btn" id="guess-btn" onclick="submitAnswer()">Guess</button>
     </div>
     <div id="feedback"></div>`;
@@ -177,10 +191,9 @@
   }
 
   function nextQuestion() { gameIdx++; renderQuestion(); }
-
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  showHome();
+  loadQuestions();
 </script>
 </body>
 </html>
