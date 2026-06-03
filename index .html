@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tevyat Trivia</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #ffffff; --bg-secondary: #f5f5f4; --bg-tertiary: #eeede9;
+      --text-primary: #1c1c1a; --text-secondary: #6b6b67; --text-tertiary: #a3a39f;
+      --border-light: rgba(0,0,0,0.10); --border-mid: rgba(0,0,0,0.18); --border-strong: rgba(0,0,0,0.28);
+      --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+      --green: #1d9e75; --green-bg: #eaf3de; --green-text: #3b6d11;
+      --red-bg: #fcebeb; --red-text: #a32d2d;
+      --gold: #b8860b; --gold-bg: #fdf6e3;
+      --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1c1c1a; --bg-secondary: #2a2a27; --bg-tertiary: #222220;
+        --text-primary: #f0efeb; --text-secondary: #a3a39f; --text-tertiary: #6b6b67;
+        --border-light: rgba(255,255,255,0.08); --border-mid: rgba(255,255,255,0.14); --border-strong: rgba(255,255,255,0.22);
+        --green-bg: #173404; --green-text: #c0dd97; --red-bg: #501313; --red-text: #f09595;
+        --gold-bg: #2a2000; --gold: #f0c040;
+      }
+    }
+    body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+    .app { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 500; }
+    .back-btn { background: none; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 8px; cursor: pointer; color: var(--text-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .back-btn:hover { background: var(--bg-secondary); }
+    .play-btn { background: var(--text-primary); color: var(--bg-primary); border: none; border-radius: var(--radius-md); padding: 11px 26px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .play-btn:hover { opacity: 0.85; }
+    .outline-btn { background: none; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 11px 22px; font-size: 15px; cursor: pointer; color: var(--text-secondary); font-family: inherit; }
+    .outline-btn:hover { background: var(--bg-secondary); }
+
+    /* Home */
+    .home-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; }
+    .home-title { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+    .home-subtitle { font-size: 13px; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem; }
+    .home-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .status-msg { margin-top: 1.25rem; font-size: 13px; color: var(--text-tertiary); min-height: 20px; }
+
+    /* Instructions */
+    .instructions-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2rem; }
+    .instructions-title { font-size: 20px; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+    .rule { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 0.5px solid var(--border-light); }
+    .rule:last-of-type { border-bottom: none; }
+    .rule-num { background: var(--bg-secondary); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+    .rule-text { font-size: 14px; line-height: 1.6; color: var(--text-primary); }
+    .rule-text strong { color: var(--text-primary); }
+    .rule-sub { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+    .instr-btns { display: flex; gap: 10px; margin-top: 1.5rem; justify-content: center; }
+
+    /* Game */
+    .game-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+    .game-header h1 { flex: 1; }
+    .score-badge { background: var(--bg-secondary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 4px 12px; font-size: 13px; color: var(--text-secondary); }
+    .progress-bar { height: 4px; background: var(--border-light); border-radius: 2px; margin-bottom: 1.25rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.35s ease; }
+    .question-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; margin-bottom: 1rem; }
+    .q-num { font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
+    .q-image { width: 180px; height: 180px; object-fit: contain; margin: 0 auto 1.25rem; display: block; border-radius: var(--radius-md); background: var(--bg-secondary); }
+    .tries-row { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+    .try-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); transition: background 0.2s; }
+    .try-dot.used { background: var(--border-mid); }
+    .hint-box { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; text-align: left; line-height: 1.5; display: none; }
+    .hint-box.visible { display: block; }
+    .hint-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 4px; }
+    .answer-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .answer-input { flex: 1; font-size: 15px; padding: 10px 12px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .answer-input:focus { border-color: var(--border-strong); }
+    .answer-input:disabled { opacity: 0.6; }
+    .answer-input.shake { animation: shake 0.35s ease; }
+    .guess-btn { background: var(--text-primary); color: var(--bg-primary); border: none; border-radius: var(--radius-md); padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .guess-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tries-left { font-size: 12px; color: var(--text-tertiary); text-align: center; margin-bottom: 6px; min-height: 16px; }
+    .feedback { border-radius: var(--radius-md); padding: 10px 14px; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+    .feedback.correct { background: var(--green-bg); color: var(--green-text); }
+    .feedback.wrong { background: var(--red-bg); color: var(--red-text); }
+    .feedback.out { background: var(--red-bg); color: var(--red-text); }
+    .next-btn { background: none; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 9px 18px; font-size: 14px; cursor: pointer; color: var(--text-primary); font-family: inherit; }
+    .next-btn:hover { background: var(--bg-secondary); }
+
+    /* Finish */
+    .finish-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; }
+    .finish-score { font-size: 48px; font-weight: 600; margin-bottom: 6px; }
+    .finish-label { font-size: 15px; color: var(--text-secondary); margin-bottom: 1rem; }
+    .perfect-banner { background: var(--gold-bg); border: 0.5px solid var(--gold); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .perfect-title { font-size: 18px; font-weight: 600; color: var(--gold); margin-bottom: 4px; }
+    .perfect-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+    .loader { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border-mid); border-top-color: var(--text-primary); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME -->
+  <div id="view-home">
+    <div class="home-card">
+      <div class="home-title">Tevyat Trivia</div>
+      <div class="home-subtitle">Genshin Impact Character Quiz</div>
+      <div class="home-btns">
+        <button class="play-btn" onclick="showInstructions()">Play</button>
+      </div>
+      <div class="status-msg" id="status-msg"></div>
+    </div>
+  </div>
+
+  <!-- INSTRUCTIONS -->
+  <div id="view-instructions" style="display:none">
+    <div class="instructions-card">
+      <div class="instructions-title">📜 How to Play</div>
+
+      <div class="rule">
+        <div class="rule-num">1</div>
+        <div>
+          <div class="rule-text">You will be shown an <strong>accessory or item</strong> belonging to a playable Genshin Impact character.</div>
+        </div>
+      </div>
+
+      <div class="rule">
+        <div class="rule-num">2</div>
+        <div>
+          <div class="rule-text">You have <strong>3 tries</strong> to guess the correct character name.</div>
+        </div>
+      </div>
+
+      <div class="rule">
+        <div class="rule-num">3</div>
+        <div>
+          <div class="rule-text">Your <strong>first wrong answer</strong> will reveal a hint to help you out.</div>
+          <div class="rule-sub">The hint is not available before your first guess.</div>
+        </div>
+      </div>
+
+      <div class="rule">
+        <div class="rule-num">4</div>
+        <div>
+          <div class="rule-text">If you use all 3 tries without guessing correctly, the answer will be revealed.</div>
+        </div>
+      </div>
+
+      <div class="rule">
+        <div class="rule-num">5</div>
+        <div>
+          <div class="rule-text">Score <strong>5 out of 5</strong> to earn a special reward — good luck, Traveler! ✨</div>
+        </div>
+      </div>
+
+      <div class="instr-btns">
+        <button class="play-btn" onclick="startGame()">Let's Go!</button>
+        <button class="outline-btn" onclick="showHome()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="view-game" style="display:none">
+    <div class="game-header">
+      <button class="back-btn" onclick="showHome()"><i class="ti ti-arrow-left" aria-hidden="true" style="font-size:16px"></i></button>
+      <h1>Tevyat Trivia</h1>
+      <div class="score-badge" id="score-badge">0 / 0</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div id="game-body"></div>
+  </div>
+
+</div>
+<script>
+  const GIST_ID = '909f9d142729a47519868d1773563aeb';
+  const MAX_TRIES = 3;
+
+  let questions = [], gameQueue = [], gameIdx = 0, gameScore = 0;
+  let triesLeft = MAX_TRIES, answered = false;
+
+  // ── Data ───────────────────────────────────────────────────────────────
+  async function loadQuestions() {
+    const msg = document.getElementById('status-msg');
+    msg.innerHTML = '<span class="loader"></span> Loading…';
+    try {
+      const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, { headers: { 'Accept': 'application/vnd.github+json' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const file = data.files['questions.json'] || Object.values(data.files)[0];
+      const raw = await fetch(file.raw_url);
+      questions = await raw.json();
+      msg.textContent = questions.filter(q => q.is_active).length === 0 ? 'No questions available yet — check back soon!' : '';
+    } catch(e) {
+      msg.textContent = 'Could not load questions. Try refreshing.';
+    }
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────────
+  function showHome() {
+    document.getElementById('view-home').style.display = '';
+    document.getElementById('view-instructions').style.display = 'none';
+    document.getElementById('view-game').style.display = 'none';
+  }
+
+  function showInstructions() {
+    document.getElementById('view-home').style.display = 'none';
+    document.getElementById('view-instructions').style.display = '';
+    document.getElementById('view-game').style.display = 'none';
+  }
+
+  async function startGame() {
+    await loadQuestions();
+    const active = questions.filter(q => q.is_active);
+    if (active.length === 0) { showHome(); return; }
+    gameQueue = [...active].sort(() => Math.random() - 0.5);
+    gameIdx = 0; gameScore = 0;
+    document.getElementById('view-home').style.display = 'none';
+    document.getElementById('view-instructions').style.display = 'none';
+    document.getElementById('view-game').style.display = '';
+    renderQuestion();
+  }
+
+  // ── Game ───────────────────────────────────────────────────────────────
+  function renderQuestion() {
+    const total = gameQueue.length;
+    document.getElementById('score-badge').textContent = gameScore + ' / ' + total;
+    document.getElementById('progress-fill').style.width = (gameIdx / total * 100) + '%';
+    const body = document.getElementById('game-body');
+
+    if (gameIdx >= total) { renderFinish(total); return; }
+
+    const q = gameQueue[gameIdx];
+    answered = false;
+    triesLeft = MAX_TRIES;
+
+    body.innerHTML = `
+      <div class="question-card">
+        <div class="q-num">Question ${gameIdx + 1} of ${total}</div>
+        <img class="q-image" src="${esc(q.image_url)}" alt="Accessory image">
+        <div class="tries-row" id="tries-row">
+          <div class="try-dot"></div>
+          <div class="try-dot"></div>
+          <div class="try-dot"></div>
+        </div>
+        <div class="hint-box" id="hint-box">
+          <div class="hint-label">Hint</div>
+          ${esc(q.hint)}
+        </div>
+      </div>
+      <div class="tries-left" id="tries-left">3 tries remaining</div>
+      <div class="answer-row">
+        <input class="answer-input" id="answer-in" type="text" placeholder="Character name…"
+          onkeydown="if(event.key==='Enter')submitAnswer()" autocomplete="off" spellcheck="false">
+        <button class="guess-btn" id="guess-btn" onclick="submitAnswer()">Guess</button>
+      </div>
+      <div id="feedback"></div>`;
+
+    setTimeout(() => { const i = document.getElementById('answer-in'); if(i) i.focus(); }, 60);
+  }
+
+  function updateTryDots() {
+    const dots = document.querySelectorAll('.try-dot');
+    dots.forEach((d, i) => {
+      d.classList.toggle('used', i >= triesLeft);
+    });
+  }
+
+  function submitAnswer() {
+    if (answered) return;
+    const inp = document.getElementById('answer-in');
+    const val = inp ? inp.value.trim() : '';
+    if (!val) return;
+
+    const q = gameQueue[gameIdx];
+    const correct = val.toLowerCase() === q.correct_answer.toLowerCase();
+    const fb = document.getElementById('feedback');
+    const triesLabel = document.getElementById('tries-left');
+
+    if (correct) {
+      answered = true;
+      gameScore++;
+      document.getElementById('score-badge').textContent = gameScore + ' / ' + gameQueue.length;
+      if (inp) inp.disabled = true;
+      document.getElementById('guess-btn').disabled = true;
+      if (fb) fb.innerHTML = `<div class="feedback correct">✓ Correct!</div>
+        <button class="next-btn" onclick="nextQuestion()">${gameIdx + 1 < gameQueue.length ? 'Next →' : 'See Results'}</button>`;
+      if (triesLabel) triesLabel.textContent = '';
+    } else {
+      triesLeft--;
+      updateTryDots();
+
+      // Shake the input
+      if (inp) {
+        inp.classList.add('shake');
+        setTimeout(() => inp.classList.remove('shake'), 400);
+        inp.value = '';
+      }
+
+      // Reveal hint on first wrong answer
+      if (triesLeft === MAX_TRIES - 1) {
+        const hintBox = document.getElementById('hint-box');
+        if (hintBox) hintBox.classList.add('visible');
+      }
+
+      if (triesLeft <= 0) {
+        // Out of tries
+        answered = true;
+        if (inp) inp.disabled = true;
+        document.getElementById('guess-btn').disabled = true;
+        if (triesLabel) triesLabel.textContent = '';
+        if (fb) fb.innerHTML = `<div class="feedback out">✗ The answer was <strong>${esc(q.correct_answer)}</strong></div>
+          <button class="next-btn" onclick="nextQuestion()">${gameIdx + 1 < gameQueue.length ? 'Next →' : 'See Results'}</button>`;
+      } else {
+        if (triesLabel) triesLabel.textContent = triesLeft === 1 ? 'Last try!' : triesLeft + ' tries remaining';
+        if (fb) fb.innerHTML = `<div class="feedback wrong">✗ Not quite — try again!</div>`;
+        setTimeout(() => { if (fb && !answered) fb.innerHTML = ''; }, 1500);
+      }
+    }
+  }
+
+  function nextQuestion() { gameIdx++; renderQuestion(); }
+
+  function renderFinish(total) {
+    const perfect = gameScore === total;
+    const pct = Math.round(gameScore / total * 100);
+    const body = document.getElementById('game-body');
+    body.innerHTML = `<div class="finish-card">
+      <div class="finish-score">${gameScore}<span style="font-size:24px;color:var(--text-tertiary)"> / ${total}</span></div>
+      <div class="finish-label">${pct >= 70 && !perfect ? 'Great job, Traveler!' : !perfect ? 'Keep exploring Tevyat!' : ''}</div>
+      ${perfect ? `<div class="perfect-banner">
+        <div class="perfect-title">⭐ Congratulations! ⭐</div>
+        <div class="perfect-text">You scored a perfect ${total}/${total}! You truly know the characters of Tevyat inside and out. The Traveler would be proud!</div>
+      </div>` : ''}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="play-btn" onclick="startGame()">Play Again</button>
+        <button class="outline-btn" onclick="showHome()">Home</button>
+      </div>
+    </div>`;
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  loadQuestions();
+</script>
+</body>
+</html>
